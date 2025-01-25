@@ -1,6 +1,5 @@
 const express   = require('express');
 const router    = express.Router();
-const db        = require('../config/db');
 const reg       = require('../models/reg');
 const log       = require('../models/log');
 const complaint = require('../models/comp');

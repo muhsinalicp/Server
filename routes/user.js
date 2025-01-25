@@ -10,6 +10,7 @@ const product = require('../models/product');
 const order = require('../models/order');
 const cart = require('../models/cart')
 const multer = require('multer');
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => { cb(null, 'uploads') },
     filename: (req, file, cb) => {
@@ -19,8 +20,6 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
-
-db();
 
 
 router.post('/register', upload.single('image'), async (req, res) => {
