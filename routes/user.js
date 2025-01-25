@@ -10,16 +10,46 @@ const product = require('../models/product');
 const order = require('../models/order');
 const cart = require('../models/cart')
 const multer = require('multer');
+const AWS = require('aws-sdk');
+const multerS3 = require('multer-s3');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => { cb(null, 'uploads') },
-    filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + path.extname(file.originalname)
-        cb(null, uniqueName)
-    }
-});
+AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: 'eu-north-1',
+  });
 
-const upload = multer({ storage: storage });
+  const s3 = new AWS.S3();
+
+  const upload = multer({
+    storage: multerS3({
+      s3: s3,
+      bucket: 'cart-hive-bucket',
+      metadata: (req, file, cb) => {
+        cb(null, { fieldName: file.fieldname });
+      },
+      key: (req, file, cb) => {
+        cb(null, `uploads/${Date.now()}_${file.originalname}`); // Customize path in S3
+      },
+    }),
+  });
+
+
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => { cb(null, 'uploads') },
+//     filename: (req, file, cb) => {
+//         const uniqueName = Date.now() + '-' + path.extname(file.originalname)
+//         cb(null, uniqueName)
+//     }
+// });
+
+// const upload = multer({ storage: storage });
+
+
+router.post('/checkupload',upload.single('image'),(req, res)=>
+    {
+        res.json({ 'status': `done, location: ${req.file.location}` })
+    })
 
 
 router.post('/register', upload.single('image'), async (req, res) => {
