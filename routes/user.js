@@ -30,8 +30,7 @@ const uploadToS3 = async (file) => {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: `uploads/${Date.now()}_${file.originalname}`, // S3 file path
       Body: file.buffer,
-      ContentType: file.mimetype,
-      ACL: 'public-read', // File permissions
+      ContentType: file.mimetype
     };
 
 
