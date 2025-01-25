@@ -1,11 +1,10 @@
-const { status } = require('init');
 const mongo = require('mongoose');
 
 const comp = new mongo.Schema(
     {
-        date:String,
-        complaint:String,
-        status:String,
+        date:{type:Date,required:true},
+        complaint:{type:String,required:true},
+        status:{type:String,required:true},
         reply:String,
         regref:{type:mongo.Schema.Types.ObjectId,ref:'reg'}
 
