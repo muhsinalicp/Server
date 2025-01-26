@@ -30,7 +30,8 @@ const uploadToS3 = async (file) => {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: `uploads/${Date.now()}_${file.originalname}`, // S3 file path
       Body: file.buffer,
-      ContentType: file.mimetype
+      ContentType: file.mimetype,
+      ACL: 'public-read-write',
     };
 
 
@@ -45,15 +46,6 @@ const uploadToS3 = async (file) => {
       }
     };
 
-// const storage = multer.diskStorage({
-    //     destination: (req, file, cb) => { cb(null, 'uploads') },
-    //     filename: (req, file, cb) => {
-//         const uniqueName = Date.now() + '-' + path.extname(file.originalname)
-//         cb(null, uniqueName)
-//     }
-// });
-
-// const upload = multer({ storage: storage });
 
 router.post('/upload', upload.single('image'), async (req, res) => {
     try {
