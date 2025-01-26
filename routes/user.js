@@ -28,10 +28,9 @@ const upload = multer({ storage });
 const uploadToS3 = async (file) => {
     const params = {
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `uploads/${Date.now()}_${file.originalname}`, // S3 file path
+      Key: `uploads/${Date.now()}_${file.originalname}`,
       Body: file.buffer,
       ContentType: file.mimetype,
-      ACL: 'public-read-write',
     };
 
 
@@ -64,16 +63,19 @@ router.post('/upload', upload.single('image'), async (req, res) => {
   });
 
 
-router.post('/checkupload',upload.single('image'),(req, res)=>
-    {
-        res.json({ 'status': `done, location: ${req.file.location}` })
-    })
-
-
 router.post('/register', upload.single('image'), async (req, res) => {
 
-    // console.log(req.file.filename);
-    // console.log(req.body);
+
+    if (req.body.username || req.body.password || req.body.name || req.body.phone || req.body.email || req.body.address) 
+        {
+            return res.status(400).json({ status: 'error', message: 'all fields are required' })
+        }
+
+    if (!req.file) {
+        return res.status(400).json({ status: 'error', message: 'image is required' })
+    }
+
+    const imgurl = await uploadToS3(req.file);
 
 
     var login =
@@ -92,50 +94,52 @@ router.post('/register', upload.single('image'), async (req, res) => {
         phone: req.body.phone,
         email: req.body.email,
         address: req.body.address,
-        image: req.file.filename,
+        image: imgurl,
         login: logdata._id
     }
 
     const regg = new reg(regi);
     await regg.save();
 
-    // res.redirect('/user/login');
     res.json({ 'status': 'done' })
 });
 
-
 router.post('/login_post', async (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
 
-    const data = await log.findOne({ username: username, password: password });
-    // const sell = await seller.findOne({login:data._id})
-    if (!data) {
-        // res.redirect('/user/login');
-        res.json({ 'status': "no" });
+    if (!req.body.username || !req.body.password) {
+        return res.json({ 'status': "username or password is missing" });
     }
-    else if (data.type == 'user') {
-        // req.session.lid =data._id;
-        // res.redirect('/user/home');
-        res.json({ 'status': "okuser", "lid": data._id });
 
+    try {
+        const username = req.body.username;
+        const password = req.body.password;
+    
+        const data = await log.findOne({ username: username, password: password });
+    
+        if (!data) {
+           return res.json({ 'status': "no" });
+        }
+        else if (data.type == 'user') {
+           return res.json({ 'status': "okuser", "lid": data._id });
+    
+        }
+        else if (data.type == 'seller') {
+           return res.json({ 'status': "okseller", 'lid': data._id });
+    
+        }
+        else {
+           return res.json({ 'status': "no" });
+    
+        }
     }
-    else if (data.type == 'seller') {
-        req.session.lid = data._id;
-        // res.redirect('/user/sellerhome');
-        res.json({ 'status': "okseller", 'lid': data._id });
-
-    }
-    else {
-        // res.redirect('/user/login');
-        res.json({ 'status': "no" });
-
+    catch (err) 
+    { 
+        res.json({ 'status': "error" , 'message': err }); 
     }
 });
 
 router.get('/home', async (req, res) => {
     const data = await product.find();
-    // res.render('home',{data:data});
     res.json({ "data": data })
 });
 
