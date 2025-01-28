@@ -9,6 +9,7 @@ const product = require('../models/product');
 const order = require('../models/order');
 const cart = require('../models/cart')
 const multer = require('multer');
+const Joi = require('joi');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -64,50 +65,71 @@ router.post('/upload', upload.single('image'), async (req, res) => {
 
 
 router.post('/register', upload.single('image'), async (req, res) => {
+try
+{
+    const schema = Joi.object({
+        username: Joi.string().min(3).max(30).required(),
+        password: Joi.string().min(6).required(),
+        name: Joi.string().min(2).required(),
+        phone: Joi.string().pattern(/^[0-9]{10}$/).required(),
+        email: Joi.string().email().required(),
+        address: Joi.string().min(5).required(),
+      });
 
+      const { error } = schema.validate(req.body);
+      if (error) {
+        console.log(error);
+        return res.status(400).json({ status: 'error', message: error.details[0].message });
+      }
 
-    if (req.body.username || req.body.password || req.body.name || req.body.phone || req.body.email || req.body.address) 
-        {
-            return res.status(400).json({ status: 'error', message: 'all fields are required' })
-        }
+      if (!req.file) {
+        console.log('lll');
+        return res.status(400).json({ status: 'error', message: 'Image is required' });
+      }
 
-    if (!req.file) {
-        return res.status(400).json({ status: 'error', message: 'image is required' })
-    }
+      const existingUser = await log.findOne({ username: req.body.username });
+      const existingEmail = await reg.findOne({ email: req.body.email });
+  
+      if (existingUser) {
+        return res.status(400).json({ status: 'error', message: 'Username already exists' });
+      }
+  
+      if (existingEmail) {
+        return res.status(400).json({ status: 'error', message: 'Email already exists' });
+      }
 
-    const imgurl = await uploadToS3(req.file);
+      const imgurl = await uploadToS3(req.file);
 
-
-    var login =
-    {
+      const login = new log({
         username: req.body.username,
         password: req.body.password,
-        type: "user"
-    };
+        type: 'user',
+      });
+      await login.save();
 
-    const logdata = new log(login);
-    await logdata.save();
-
-    var regi =
-    {
+      const registration = new reg({
         name: req.body.name,
         phone: req.body.phone,
         email: req.body.email,
         address: req.body.address,
         image: imgurl,
-        login: logdata._id
-    }
-
-    const regg = new reg(regi);
-    await regg.save();
-
-    res.json({ 'status': 'done' })
+        login: login._id,
+      });
+      await registration.save();
+    
+      res.status(201).json({ status: 'done', message: 'User registered successfully' });
+}
+catch(err)
+{
+    console.error('Error in /register route:', err.message);
+    res.status(500).json({ status: 'error', message: 'An internal server error occurred' });
+}
 });
 
 router.post('/login_post', async (req, res) => {
 
     if (!req.body.username || !req.body.password) {
-        return res.json({ 'status': "username or password is missing" });
+        return res.status(400).json({ 'status': "username or password is missing" });
     }
 
     try {
@@ -117,23 +139,24 @@ router.post('/login_post', async (req, res) => {
         const data = await log.findOne({ username: username, password: password });
     
         if (!data) {
-           return res.json({ 'status': "no" });
+           return res.json({ 'status': "nouserfound" });
         }
         else if (data.type == 'user') {
-           return res.json({ 'status': "okuser", "lid": data._id });
+           return res.status(200).json({ 'status': "okuser", "lid": data._id });
     
         }
         else if (data.type == 'seller') {
-           return res.json({ 'status': "okseller", 'lid': data._id });
+           return res.status(200).json({ 'status': "okseller", 'lid': data._id });
     
         }
         else {
-           return res.json({ 'status': "no" });
+           return res.status(200).json({ 'status': "no" });
     
         }
     }
     catch (err) 
     { 
+        console.log("Error in /login_post Route",err);
         res.json({ 'status': "error" , 'message': err }); 
     }
 });
@@ -269,9 +292,9 @@ router.get('/sellerhome', async (req, res) => {
     // res.render('sellerhome', { data: data });
 });
 
-router.get('/addproduct', (req, res) => {
-    res.render('addprod');
-});
+// router.get('/addproduct', (req, res) => {
+//     res.render('addprod');
+// });
 
 router.get('/sellerprofile', async (req, res) => {
     const lid = req.query.lid;
@@ -283,69 +306,70 @@ router.get('/sellerprofile', async (req, res) => {
     // res.render('view',{a:data});
 });
 
-router.post('/submitproduct', upload.array('productImage'), async (req, res) => {
-
-    const lid = req.body.lid
-    const images = req.files ? req.files.map(file => file.filename) : []
-    const pname = req.body.productname;
-    const pprice = req.body.price;
-    const description = req.body.description;
-
-
-    if (!lid || !images || !pname || !pprice || !description) {
-        return res.status(400).json({ status: 'error', message: 'all fields are required' })
-    }
-
+router.post('/submitproduct', upload.array('productImage', 6), async (req, res) => {
     try {
-        const ref = await seller.findOne({ login: lid })
-        if (!ref) {
-            return res.status(404).json({ status: 'error', message: 'Seller not found.' });
-        }
-        var item =
-        {
-            image: images,
-            productprice: pprice,
-            productname: pname,
-            description: description,
-            sellerid: ref._id
-        }
-        console.log('items', item);
-
-        const model = new product(item);
-        await model.save();
-
-        res.json({'status':'done'});
-
+      // Validate required fields
+      const { lid, productname, price, description } = req.body;
+  
+      if (!lid || !productname || !price || !description || !req.files) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'All fields are required, including images.',
+        });
+      }
+  
+      // Find the seller
+      const ref = await seller.findOne({ login: lid });
+  
+      if (!ref) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Seller not found.',
+        });
+      }
+  
+      // Upload files to S3
+      const uploadToS3 = (file) => {
+        const fileKey = `${uuidv4()}-${file.originalname}`; // Generate unique file name
+        const params = {
+          Bucket: process.env.AWS_S3_BUCKET_NAME, // Your bucket name
+          Key: fileKey,
+          Body: file.buffer, // Use file buffer for upload
+          ContentType: file.mimetype,
+          ACL: 'public-read', // Make file publicly accessible
+        };
+  
+        return s3.upload(params).promise(); // Return a promise
+      };
+  
+      const imageUploadPromises = req.files.map(uploadToS3);
+      const uploadedImages = await Promise.all(imageUploadPromises);
+  
+      // Extract URLs of uploaded images
+      const imageUrls = uploadedImages.map((img) => img.Location);
+  
+      // Create product object
+      const item = {
+        image: imageUrls,
+        productprice: price,
+        productname: productname,
+        description: description,
+        sellerid: ref._id,
+      };
+  
+      // Save product to the database
+      const model = new product(item);
+      await model.save();
+  
+      res.status(200).json({ status: 'done', message: 'Product submitted successfully!' });
+    } catch (error) {
+      console.error('Error occurred while submitting product:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Internal server error. Please try again later.',
+      });
     }
-    catch {
-        console.error('Error saving product:', error);
-        res.status(500).json({ status: 'error', message: 'Internal server error.' });
-
-    }
-
-
-
-
-    // const lid = req.body.lid
-    // const image  = req.file.filename;
-    // const pname  = req.body.productname;
-    // const pprice = req.body.price;
-    // const description =req.body.description;
-    // const ref = await seller.findOne({login:lid});
-    // var item =
-    // {
-    //     image:image,
-    //     productprice:pprice,
-    //     productname:pname,
-    //     description:description,
-    //     sellerid:ref._id
-    // }
-    // console.log('items',item);
-    // const model = new product(item);
-    // await model.save();
-    // res.json({'status':'done'});
-
-});
+  });
 
 router.get('/delete/:id', async (req, res) => {
     const id = req.params.id;
