@@ -9,10 +9,13 @@ const product = require('../models/product');
 const order = require('../models/order');
 const cart = require('../models/cart')
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const authMiddleware = require('../middleware/authentication');
 const dotenv = require('dotenv');
 dotenv.config();
+
 const router = express.Router();
 
 const s3 = new S3Client({
@@ -132,32 +135,35 @@ router.post('/login_post', async (req, res) => {
         return res.status(400).json({ 'status': "username or password is missing" });
     }
 
-    try {
-        const username = req.body.username;
-        const password = req.body.password;
-    
-        const data = await log.findOne({ username: username, password: password });
-    
-        if (!data) {
-           return res.json({ 'status': "nouserfound" });
+    console.log(req.body);
+
+    try
+    {
+
+        const user = await log.findOne({ username: req.body.username , password: req.body.password });
+        if (!user) {
+            return res.status(404).json({ 'status': "user not found" });
         }
-        else if (data.type == 'user') {
-           return res.status(200).json({ 'status': "okuser", "lid": data._id });
-    
-        }
-        else if (data.type == 'seller') {
-           return res.status(200).json({ 'status': "okseller", 'lid': data._id });
-    
-        }
-        else {
-           return res.status(200).json({ 'status': "no" });
-    
-        }
+
+        const token = jwt.sign(
+          { id: user._id,
+            type: user.type 
+          }
+           , process.env.JWT_SECRET, 
+           { expiresIn: '2h' }); //expires in 2 hours
+
+           res.status(200).json({
+            status: "success", 
+            token:token,
+            userType: user.type,
+            lid: user._id
+          });
     }
-    catch (err) 
-    { 
-        console.log("Error in /login_post Route",err);
-        res.json({ 'status': "error" , 'message': err }); 
+
+    catch(err)
+    {
+        console.error('Error in /login_post route:', err.message);
+        res.status(500).json({ status: 'error', message: 'An internal server error occurred' });
     }
 });
 
@@ -166,7 +172,7 @@ router.get('/home', async (req, res) => {
     res.json({ "data": data })
 });
 
-router.get('/view', async (req, res) => {
+router.get('/view',authMiddleware, async (req, res) => {
     const lid = req.query.lid;
 
     const data = await reg.findOne({ login: lid })
