@@ -11,6 +11,7 @@ const cart = require('../models/cart')
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
+const { v4: uuidv4 } = require('uuid');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const authMiddleware = require('../middleware/authentication');
 const dotenv = require('dotenv');
@@ -150,7 +151,7 @@ router.post('/login_post', async (req, res) => {
             type: user.type 
           }
            , process.env.JWT_SECRET, 
-           { expiresIn: '2h' }); //expires in 2 hours
+           { expiresIn: '2h' });
 
            res.status(200).json({
             status: "success", 
@@ -312,70 +313,50 @@ router.get('/sellerprofile', async (req, res) => {
     // res.render('view',{a:data});
 });
 
-router.post('/submitproduct', upload.array('productImage', 6), async (req, res) => {
-    try {
+router.post('/submitproduct', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'additionalImages', maxCount: 5 }]), async (req, res) => {
+  try {
+      console.log('Request received:', req.body);
+      
+      const { productname, category, price, description } = req.body;
+      
+      
       // Validate required fields
-      const { lid, productname, price, description } = req.body;
-  
-      if (!lid || !productname || !price || !description || !req.files) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'All fields are required, including images.',
-        });
+      if (!productname || !category || !price || !description || !req.files) {
+          return res.status(400).json({
+              status: 'error',
+              message: 'All fields are required, including images.',
+          });
       }
-  
-      // Find the seller
-      const ref = await seller.findOne({ login: lid });
-  
-      if (!ref) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Seller not found.',
-        });
-      }
-  
-      // Upload files to S3
-      const uploadToS3 = (file) => {
-        const fileKey = `${uuidv4()}-${file.originalname}`; // Generate unique file name
-        const params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME, // Your bucket name
-          Key: fileKey,
-          Body: file.buffer, // Use file buffer for upload
-          ContentType: file.mimetype,
-          ACL: 'public-read', // Make file publicly accessible
-        };
-  
-        return s3.upload(params).promise(); // Return a promise
+
+      // Extract images
+      const mainImageUrl = await uploadToS3(req.files.image[0]);
+
+      // Upload additional images if they exist
+      const additionalImageUrls = req.files.additionalImages
+          ? await Promise.all(req.files.additionalImages.map(uploadToS3))
+          : [];
+
+      const allImageUrls = [mainImageUrl, ...additionalImageUrls];
+
+      const newProduct = {
+          image: allImageUrls,
+          category,
+          productprice:price,
+          productname:productname,
+          description,
       };
-  
-      const imageUploadPromises = req.files.map(uploadToS3);
-      const uploadedImages = await Promise.all(imageUploadPromises);
-  
-      // Extract URLs of uploaded images
-      const imageUrls = uploadedImages.map((img) => img.Location);
-  
-      // Create product object
-      const item = {
-        image: imageUrls,
-        productprice: price,
-        productname: productname,
-        description: description,
-        sellerid: ref._id,
-      };
-  
-      // Save product to the database
-      const model = new product(item);
-      await model.save();
-  
+
+      await product.create(newProduct); 
+
       res.status(200).json({ status: 'done', message: 'Product submitted successfully!' });
-    } catch (error) {
+  } catch (error) {
       console.error('Error occurred while submitting product:', error);
       res.status(500).json({
-        status: 'error',
-        message: 'Internal server error. Please try again later.',
+          status: 'error',
+          message: 'Internal server error. Please try again later.',
       });
-    }
-  });
+  }
+});
 
 router.get('/delete/:id', async (req, res) => {
     const id = req.params.id;
