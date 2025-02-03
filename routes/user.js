@@ -234,54 +234,13 @@ router.get('/viewreply', async (req, res) => {
 
 router.get('/seller', async (req, res) => 
 {
-
     const lid = req.query.lid;
 
     const data = await reg.findOne({login:lid})
 
     res.json({'data':data , 'status':'done'});
-    
-
-    // const data = await reg.findOne({ login: req.session.lid });
-    // console.log(data);
-    // res.render('regsell', { data: data });
 });
 
-router.post('/seller', async (req, res) => {
-
-    
-
-    var sellerlog =
-    {
-        username: req.body.username,
-        password: req.body.password,
-        type: 'seller'
-    };
-
-    const sellog = new log(sellerlog);
-    await sellog.save();
-
-    var sellerreg =
-    {
-        name: req.body.name,
-        phone: req.body.phone,
-        email: req.body.email,
-        address: req.body.address,
-        image: req.body.image,
-        login: sellog._id
-    };
-
-    console.log(sellerreg);
-
-
-    const sellreg = new seller(sellerreg);
-    await sellreg.save();
-
-
-    res.json({'status':'success'})
-    // res.redirect('/user/login');
-
-});
 
 router.get('/sellerhome', async (req, res) => {
 
@@ -311,51 +270,6 @@ router.get('/sellerprofile', async (req, res) => {
     res.json({ 'data': data })
     // const data = await seller.findOne({login:req.session.lid});
     // res.render('view',{a:data});
-});
-
-router.post('/submitproduct', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'additionalImages', maxCount: 5 }]), async (req, res) => {
-  try {
-      console.log('Request received:', req.body);
-      
-      const { productname, category, price, description } = req.body;
-      
-      
-      // Validate required fields
-      if (!productname || !category || !price || !description || !req.files) {
-          return res.status(400).json({
-              status: 'error',
-              message: 'All fields are required, including images.',
-          });
-      }
-
-      // Extract images
-      const mainImageUrl = await uploadToS3(req.files.image[0]);
-
-      // Upload additional images if they exist
-      const additionalImageUrls = req.files.additionalImages
-          ? await Promise.all(req.files.additionalImages.map(uploadToS3))
-          : [];
-
-      const allImageUrls = [mainImageUrl, ...additionalImageUrls];
-
-      const newProduct = {
-          image: allImageUrls,
-          category,
-          productprice:price,
-          productname:productname,
-          description,
-      };
-
-      await product.create(newProduct); 
-
-      res.status(200).json({ status: 'done', message: 'Product submitted successfully!' });
-  } catch (error) {
-      console.error('Error occurred while submitting product:', error);
-      res.status(500).json({
-          status: 'error',
-          message: 'Internal server error. Please try again later.',
-      });
-  }
 });
 
 router.get('/delete/:id', async (req, res) => {

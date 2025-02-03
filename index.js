@@ -14,9 +14,12 @@ app.use(express.static("public"));
 
 const adminroute = require('./routes/admin');
 const userroute  = require('./routes/user');
+const sellerroute = require('./routes/seller');
 
-app.use('/admin',adminroute);
 app.use('/',userroute);
+app.use('/admin',adminroute);
+app.use('/seller',sellerroute);
+
 
 
 app.get("/", (req, res) => {

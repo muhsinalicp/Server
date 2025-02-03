@@ -1,14 +1,13 @@
 const mongo = require('mongoose');
 
-const seller = new mongo.Schema({
-    name:String,
-    phone:String,
-    email:String,
-    address:String,
+const sellerSchema = new mongo.Schema({
+    userId:{type:mongo.Schema.Types.ObjectId,ref:'login'} ,
+    storeName:{type:String,required:true},
+    storeDesc:{type:String,required:true},
     image:String,
-    login:{type:mongo.Schema.Types.ObjectId,ref:'login'}
-});
+    phone: String
+  });
 
-const model = mongo.model('seller',seller);
+const model = mongo.model('seller',sellerSchema);
 
 module.exports = model
