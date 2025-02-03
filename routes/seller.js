@@ -6,6 +6,9 @@ dotenv.config();
 const multer =  require('multer');
 const log = require('../models/log');
 const seller = require('../models/seller');
+const product = require('../models/product');
+const authMiddleware = require('../middleware/authentication');
+const jwt = require('jsonwebtoken');
 
 
 
@@ -92,14 +95,23 @@ router.post('/sellersignup', upload.single('image'), async (req, res) => {
     }
 });
 
+router.get('/dashboard',authMiddleware,async(req,res)=>
+{
+        const {token} = req.cookies;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const sellerid = decoded.id;
+        const data = await seller.findById(sellerid);
+        res.json({'status':'success','data':data});
+});
 
-router.post('/submitproduct', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'additionalImages', maxCount: 5 }]), async (req, res) => {
+router.post('/submitproduct',authMiddleware, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'additionalImages', maxCount: 5 }]), async (req, res) => {
     try {
-        console.log('Request received:', req.body);
-        
+        // console.log('Request received:', req.body, req.files); 
         const { productname, category, price, description } = req.body;
-        
-        
+        const {token} = req.cookies;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // console.log(decoded);
+        const sellerid = decoded.id;
         // Validate required fields
         if (!productname || !category || !price || !description || !req.files) {
             return res.status(400).json({
@@ -124,7 +136,11 @@ router.post('/submitproduct', upload.fields([{ name: 'image', maxCount: 1 }, { n
             productprice:price,
             productname:productname,
             description,
+            sellerid
         };
+
+        console.log(newProduct);
+        
   
         await product.create(newProduct); 
   
@@ -136,7 +152,10 @@ router.post('/submitproduct', upload.fields([{ name: 'image', maxCount: 1 }, { n
             message: 'Internal server error. Please try again later.',
         });
     }
-  });
+});
+
+
+
 
 
 

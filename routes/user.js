@@ -151,7 +151,18 @@ router.post('/login_post', async (req, res) => {
             type: user.type 
           }
            , process.env.JWT_SECRET, 
-           { expiresIn: '2h' });
+           { expiresIn: '2h' 
+
+        });
+        
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production' ? true : false, // Secure only in production
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Lax in dev
+            maxAge: 2 * 60 * 60 * 1000,
+        });
+
+
 
            res.status(200).json({
             status: "success", 
