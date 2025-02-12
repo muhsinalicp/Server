@@ -65,7 +65,7 @@ router.post('/upload', upload.single('image'), async (req, res) => {
     } catch (err) {
       res.status(500).json({ status: 'error', message: 'File upload failed', error: err.message });
     }
-  });
+});
 
 
 router.post('/register', upload.single('image'), async (req, res) => {
@@ -87,7 +87,6 @@ try
       }
 
       if (!req.file) {
-        console.log('lll');
         return res.status(400).json({ status: 'error', message: 'Image is required' });
       }
 
@@ -181,7 +180,8 @@ router.post('/login_post', async (req, res) => {
 
 router.get('/home', async (req, res) => {
     const data = await product.find();
-    res.json({ "data": data })
+    
+    res.json({ data })
 });
 
 router.get('/view',authMiddleware, async (req, res) => {
@@ -252,7 +252,6 @@ router.get('/seller', async (req, res) =>
     res.json({'data':data , 'status':'done'});
 });
 
-
 router.get('/sellerhome', async (req, res) => {
 
     const lid = req.query.lid
@@ -268,10 +267,6 @@ router.get('/sellerhome', async (req, res) => {
     // const data = await product.find({ sellerid: sid._id });
     // res.render('sellerhome', { data: data });
 });
-
-// router.get('/addproduct', (req, res) => {
-//     res.render('addprod');
-// });
 
 router.get('/sellerprofile', async (req, res) => {
     const lid = req.query.lid;
@@ -465,4 +460,22 @@ router.get('/cartdelete/:id', async (req, res) => {
     await cart.findOneAndDelete({ _id: id })
     res.redirect('/user/showcart')
 })
+
+
+router.post('/logout', (req, res) => {    
+try
+{
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Ensure secure cookies in production
+        sameSite: 'None' 
+    });
+    return res.json({ status: 'success', message: 'Logged out successfully' });
+}
+catch (error) 
+{
+    console.error('Error logging out:', error);
+    return res.status(500).json({ status: 'error', message: error.message });
+}
+});
 module.exports = router;
