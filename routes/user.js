@@ -15,6 +15,7 @@ const { v4: uuidv4 } = require('uuid');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const authMiddleware = require('../middleware/authentication');
 const dotenv = require('dotenv');
+const { register } = require('module');
 dotenv.config();
 
 const router = express.Router();
@@ -27,7 +28,7 @@ const s3 = new S3Client({
     },
   });
 
-const storage = multer.memoryStorage(); // Store files in memory buffer temporarily
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 const uploadToS3 = async (file) => {
@@ -50,7 +51,7 @@ const uploadToS3 = async (file) => {
       }
     };
 
-
+// checking aws upload 
 router.post('/upload', upload.single('image'), async (req, res) => {
     try {
       if (!req.file) {
@@ -67,7 +68,7 @@ router.post('/upload', upload.single('image'), async (req, res) => {
     }
 });
 
-
+// user register 
 router.post('/register', upload.single('image'), async (req, res) => {
 try
 {
@@ -129,7 +130,9 @@ catch(err)
 }
 });
 
+// login post 
 router.post('/login_post', async (req, res) => {
+    
 
     if (!req.body.username || !req.body.password) {
         return res.status(400).json({ 'status': "username or password is missing" });
@@ -164,7 +167,7 @@ router.post('/login_post', async (req, res) => {
 
 
            res.status(200).json({
-            status: "success", 
+            status: "login successful", 
             token:token,
             userType: user.type,
             lid: user._id
@@ -178,11 +181,40 @@ router.post('/login_post', async (req, res) => {
     }
 });
 
+// fetch all products 
 router.get('/home', async (req, res) => {
     const data = await product.find();
     
     res.json({ data })
 });
+
+// dynamic fetching of product 
+router.get('/product/:id', async (req, res) => 
+    {
+        const id = req.params.id;
+        if (!id) {
+           return res.status(400).json({ status: 'error', message: 'Product ID is required' }); 
+        }
+        try
+        {
+            const data = await product.findOne({ _id: id });
+            if (!data) {
+                return res.status(404).json({ status: 'error', message: 'Product not found' });
+            }
+            
+            res.json({ data });
+        }
+        catch(err)
+        {
+            console.error('Error in /product/:id route:', err.message);
+            res.status(500).json({ status: 'error', message: 'An internal server error occurred' });
+        }
+    });
+
+
+
+
+
 
 router.get('/view',authMiddleware, async (req, res) => {
     const lid = req.query.lid;

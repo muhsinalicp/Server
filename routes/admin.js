@@ -12,7 +12,6 @@ const order     = require('../models/order');
 
 router.get('/',(req,res)=>
 {
-    // res.render('ahome')
     res.send('hello from admin page')
 })
 
