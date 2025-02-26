@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
-const log = require('../models/log');
+const Login = require('../models/log');
 
 const authMiddleware = async (req, res, next) => {
 
     const token = req.cookies.token;
+    
 
     if (!token) {
         return res.status(401).json({ 
@@ -15,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = await log.findById(decoded.id);
+            req.user = await Login.findById(decoded.id);
             if (!req.user) {
                 return res.status(401).json({ 
                     status: "error", 

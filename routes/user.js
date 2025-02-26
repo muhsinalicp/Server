@@ -209,11 +209,7 @@ router.get('/product/:id', async (req, res) =>
             console.error('Error in /product/:id route:', err.message);
             res.status(500).json({ status: 'error', message: 'An internal server error occurred' });
         }
-    });
-
-
-
-
+});
 
 
 router.get('/view',authMiddleware, async (req, res) => {
