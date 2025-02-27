@@ -12,8 +12,10 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: "https://cart-hive.netlify.app",
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
   }));
 
 app.use(express.static("public"));
