@@ -3,8 +3,8 @@ const app = express();
 const env = require("dotenv").config();
 const port = process.env.PORT || 3000;
 const cookieParser = require("cookie-parser");
-
 const db = require("./config/db");
+
 db();
 const cors = require("cors");
 
@@ -26,12 +26,6 @@ const sellerroute = require('./routes/seller');
 app.use('/',userroute);
 app.use('/admin',adminroute);
 app.use('/seller',sellerroute);
-
-
-
-app.get("/", (req, res) => {
-    res.send("Hello World!");
-});
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

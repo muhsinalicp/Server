@@ -100,7 +100,7 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
   const { token } = req.cookies;
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
   const sellerid = decoded.id;
-  const data = await seller.findById(sellerid);
+  const data = await Seller.findById(sellerid);
   res.json({ 'status': 'success', 'data': data });
 });
 
