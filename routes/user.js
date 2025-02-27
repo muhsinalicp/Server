@@ -158,11 +158,13 @@ router.post('/login_post', async (req, res) => {
         });
         
         res.cookie('token', token, {
-            httpOnly: true,  // Prevent client-side access
-            secure: true,  // Ensure it's sent only over HTTPS
-            sameSite: 'None',  // Required for cross-site cookies
-            maxAge: 2 * 60 * 60 * 1000,  // 2 hours
-        });
+            httpOnly: true,
+            secure: true, // REQUIRED for cross-domain cookies
+            sameSite: 'None', // REQUIRED for cross-domain cookies
+            domain: '.onrender.com', // Add this line
+            maxAge: 2 * 60 * 60 * 1000,
+            path: '/'
+          });
 
 
 

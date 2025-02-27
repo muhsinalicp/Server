@@ -18,6 +18,12 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
   }));
 
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Expose-Headers", "Set-Cookie");
+    next();
+  });
+
 app.use(express.static("public"));
 
 const adminroute = require('./routes/admin');
