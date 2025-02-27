@@ -7,6 +7,8 @@ const authMiddleware = async (req, res, next) => {
     
 
     if (!token) {
+        console.log("Token isn't provided....");
+        
         return res.status(401).json({ 
             status: "error", 
             message: "Access denied. No token provided. Please log in." 
@@ -18,11 +20,14 @@ const authMiddleware = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = await Login.findById(decoded.id);
             if (!req.user) {
+                console.log("User not found....");
                 return res.status(401).json({ 
                     status: "error", 
                     message: "Invalid or expired token. Please log in again." 
                 });
             }
+            console.log('User authenticated...');
+            
             next();
         }
         catch (error) {
