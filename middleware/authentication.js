@@ -3,8 +3,8 @@ const Login = require('../models/log');
 
 const authMiddleware = async (req, res, next) => {
 
-    const token = req.cookies.token;
-    console.log(token);
+    const {token} = req.cookies;
+    console.log(req.cookies);
     
     
 

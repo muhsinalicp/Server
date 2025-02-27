@@ -494,7 +494,7 @@ try
 {
     res.clearCookie('token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Ensure secure cookies in production
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'None' 
     });
     return res.json({ status: 'success', message: 'Logged out successfully' });
@@ -505,4 +505,5 @@ catch (error)
     return res.status(500).json({ status: 'error', message: error.message });
 }
 });
+
 module.exports = router;
