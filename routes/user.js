@@ -159,18 +159,17 @@ router.post('/login_post', async (req, res) => {
         
         res.cookie('token', token, {
             httpOnly: true,
-            secure: true,
-            sameSite:'None',
-            maxAge: 2 * 60 * 60 * 1000,
+            secure: true,  // Ensure HTTPS
+            sameSite: 'None',  // Required for cross-site cookies
+            domain: '.onrender.com',  // Set cookie for the backend domain
+            maxAge: 2 * 60 * 60 * 1000,  // 2 hours
         });
 
 
 
            res.status(200).json({
             status: "login successful", 
-            token:token,
             userType: user.type,
-            lid: user._id
           });
     }
 
