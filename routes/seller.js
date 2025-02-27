@@ -189,8 +189,6 @@ router.get('/products', authMiddleware, async (req, res) =>
 
 
     const data = await product.find({ sellerid: sellerid });
-    console.log(data);
-    console.log(data);
   
     res.json({ 'status': 'success', 'data': data });
   }
