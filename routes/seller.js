@@ -174,13 +174,13 @@ router.get('/products', authMiddleware, async (req, res) =>
       return res.status(401).json({ status: 'error', message: 'Please login first or unauthorized access' })
     }
 
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const sellerid = decoded.id;
-    console.log(sellerid);
 
 
     const seller = await Login.findOne({ _id: sellerid });
+    // console.log(seller);
+    
 
 
     if (!seller) {
@@ -188,7 +188,7 @@ router.get('/products', authMiddleware, async (req, res) =>
     }
 
 
-    const data = await product.find({ sellerid: sellerid })
+    const data = await product.find({ sellerid: sellerid });
   
     res.json({ 'status': 'success', 'data': data });
   }

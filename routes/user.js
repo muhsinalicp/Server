@@ -158,10 +158,9 @@ router.post('/login_post', async (req, res) => {
         });
         
         res.cookie('token', token, {
-            httpOnly: true,
-            secure: true,  // Ensure HTTPS
+            httpOnly: true,  // Prevent client-side access
+            secure: true,  // Ensure it's sent only over HTTPS
             sameSite: 'None',  // Required for cross-site cookies
-            domain: '.onrender.com',  // Set cookie for the backend domain
             maxAge: 2 * 60 * 60 * 1000,  // 2 hours
         });
 
@@ -494,7 +493,7 @@ try
 {
     res.clearCookie('token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production', // Ensure secure cookies in production
         sameSite: 'None' 
     });
     return res.json({ status: 'success', message: 'Logged out successfully' });
@@ -505,5 +504,4 @@ catch (error)
     return res.status(500).json({ status: 'error', message: error.message });
 }
 });
-
 module.exports = router;

@@ -3,10 +3,9 @@ const Login = require('../models/log');
 
 const authMiddleware = async (req, res, next) => {
 
-    const {token} = req.cookies;
-    console.log(req.cookies);
+    const token = req.cookies.token;
     
-    
+    console.log(token);
 
     if (!token) {
         console.log("Token isn't provided....");
@@ -28,7 +27,7 @@ const authMiddleware = async (req, res, next) => {
                     message: "Invalid or expired token. Please log in again." 
                 });
             }
-            console.log('User authenticated...');
+            console.log('User authenticated');
             
             next();
         }
