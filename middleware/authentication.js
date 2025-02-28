@@ -9,7 +9,6 @@ const authMiddleware = async (req, res, next) => {
 
     if (!token) {
         console.log("Token isn't provided....");
-        
         return res.status(401).json({ 
             status: "error", 
             message: "Access denied. No token provided. Please log in." 

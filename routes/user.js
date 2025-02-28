@@ -72,20 +72,23 @@ router.post('/upload', upload.single('image'), async (req, res) => {
 router.post('/register', upload.single('image'), async (req, res) => {
 try
 {
-    const schema = Joi.object({
+    const schema = Joi.object(
+        {
         username: Joi.string().min(3).max(30).required(),
         password: Joi.string().min(6).required(),
         name: Joi.string().min(2).required(),
         phone: Joi.string().pattern(/^[0-9]{10}$/).required(),
         email: Joi.string().email().required(),
         address: Joi.string().min(5).required(),
-      });
+        }
+    );
 
       const { error } = schema.validate(req.body);
-      if (error) {
+      if (error) 
+        {
         console.log(error);
         return res.status(400).json({ status: 'error', message: error.details[0].message });
-      }
+        }
 
       if (!req.file) {
         return res.status(400).json({ status: 'error', message: 'Image is required' });
@@ -156,22 +159,16 @@ router.post('/login_post', async (req, res) => {
            { expiresIn: '2h' 
 
         });
+
+        console.log('user/login_post token: ',token);
         
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true, // REQUIRED for cross-domain cookies
-            sameSite: 'None', // REQUIRED for cross-domain cookies
-            domain: '.onrender.com', // Add this line
-            maxAge: 2 * 60 * 60 * 1000,
-            path: '/'
-          });
+        res.cookie('token', token);
 
-
-
-           res.status(200).json({
+        res.status(200).json(
+        {
             status: "login successful", 
             userType: user.type,
-          });
+        });
     }
 
     catch(err)
@@ -190,7 +187,7 @@ router.get('/home', async (req, res) => {
 
 // dynamic fetching of product 
 router.get('/product/:id', async (req, res) => 
-    {
+{
         const id = req.params.id;
         if (!id) {
            return res.status(400).json({ status: 'error', message: 'Product ID is required' }); 
