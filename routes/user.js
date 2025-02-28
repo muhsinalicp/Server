@@ -159,8 +159,6 @@ router.post('/login_post', async (req, res) => {
            { expiresIn: '2h' 
 
         });
-
-        console.log('user/login_post token: ',token);
         
         res.cookie('token', token);
 
