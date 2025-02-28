@@ -5,8 +5,9 @@ const authMiddleware = async (req, res, next) => {
 
     const token = req.cookies.token;
     
-    console.log('token from frontend: ',token);
-
+    
+    console.log("Token from frontend: " + token);
+    
     if (!token) {
         console.log("Token isn't provided....");
         return res.status(401).json({ 
