@@ -160,7 +160,13 @@ router.post('/login_post', async (req, res) => {
 
         });
         
-        res.cookie('token', token);
+        res.cookie('token', token,{
+            domain: 'netlify.app',
+            // path: '/',
+            secure: true,
+            sameSite: 'none',
+            // httpOnly: true
+        });
 
         res.status(200).json(
         {
