@@ -4,6 +4,8 @@ const env = require("dotenv").config();
 const port = process.env.PORT || 3000;
 const cookieParser = require("cookie-parser");
 const db = require("./config/db");
+
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 db();

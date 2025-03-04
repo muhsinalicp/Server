@@ -168,22 +168,12 @@ router.post('/submitproduct', authMiddleware, upload.fields([{ name: 'image', ma
 router.get('/products', authMiddleware, async (req, res) => 
 {
   try {
-    const { token } = req.cookies;
+    const decodedSeller = req.user
 
-    if (!token) {
-      return res.status(401).json({ status: 'error', message: 'Please login first or unauthorized access' })
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const sellerid = decoded.id;
+    const sellerid = decodedSeller.id
 
 
-    const seller = await Login.findOne({ _id: sellerid });
-    // console.log(seller);
-    
-
-
-    if (!seller) {
+    if (!sellerid) {
       return res.status(401).json({ status: 'error', message: 'Please login first or seller not found' })
     }
 
