@@ -97,10 +97,7 @@ router.post('/sellersignup', upload.single('image'), async (req, res) => {
 
 // seller dashboard
 router.get('/dashboard', authMiddleware, async (req, res) => {
-  const { token } = req.cookies;
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const sellerid = decoded.id;
-  const data = await Seller.findById(sellerid);
+  const data =req.user
   res.json({ 'status': 'success', 'data': data });
 });
 
@@ -188,7 +185,9 @@ router.get('/products', authMiddleware, async (req, res) =>
   }
 })
 
+//view seller details
 
+//recievedorders
 
 
 

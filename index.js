@@ -5,6 +5,8 @@ const port = process.env.PORT || 3000;
 const cookieParser = require("cookie-parser");
 const db = require("./config/db");
 
+app.set('trust proxy', 1);
+
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -27,6 +29,8 @@ const sellerroute = require('./routes/seller');
 app.use('/', userroute);
 app.use('/admin', adminroute);
 app.use('/seller', sellerroute);
+
+
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

@@ -131,16 +131,21 @@ router.post('/login_post', async (req, res) => {
         }
 
         const token = generateToken(user);
+        console.log(token);
+        
 
         if (token) {
 
             res.cookie('token', token, {
-                // secure: true,
-                sameSite: 'none',
-                // httpOnly: true,
-                maxAge: 2 * 60 * 60 * 1000
+                secure: process.env.NODE_ENV === 'production', // Auto-switch between HTTP/HTTPS
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+                httpOnly: true, // Always enable for security
+                maxAge: 2 * 60 * 60 * 1000,
+                path: '/',
+                domain: process.env.NODE_ENV === 'production' 
+                        ? '.onrender.com' // Your Render domain
+                        : undefined
             });
-            console.log('token sent successfully');
             
 
             res.status(200).json(
@@ -187,284 +192,6 @@ router.get('/product/:id', async (req, res) => {
     }
 });
 
-
-router.get('/view', authMiddleware, async (req, res) => {
-    const lid = req.query.lid;
-
-    const data = await reg.findOne({ login: lid })
-
-    // res.render('view',{a:data});
-    res.json({ 'data': data })
-});
-
-router.get('/complaint', async (req, res) => {
-    const lid = req.query.lid;
-
-    const data = await reg.findOne({ login: lid })
-    console.log(data);
-
-
-    res.json({ 'data': data })
-
-
-    // const data = await reg.findOne({login:req.session.lid});
-    // res.render('complaint');
-});
-
-router.post('/complaint', async (req, res) => {
-    const compl = req.body.complaint;
-    const date = req.body.date;
-
-    const register = await reg.findOne({ login: req.session.lid })
-
-    var data =
-    {
-        complaint: compl,
-        date: date,
-        regref: register._id,
-        status: 'pending',
-        reply: 'pending'
-    }
-
-    const col = new complaint(data);
-    await col.save();
-
-    res.render('succ')
-});
-
-router.get('/viewreply', async (req, res) => {
-
-    const lid = req.query.lid;
-
-    const logi = await reg.findOne({ login: lid })
-    const data = await complaint.findOne({ regref: logi._id })
-
-    res.json({ 'data': data })
-
-
-    // const u=await reg.findOne({login:req.session.lid});
-    // const data = await complaint.findOne({regref:u._id});
-    // res.render('userview',{data:data});
-});
-
-router.get('/seller', async (req, res) => {
-    const lid = req.query.lid;
-
-    const data = await reg.findOne({ login: lid })
-
-    res.json({ 'data': data, 'status': 'done' });
-});
-
-router.get('/sellerhome', async (req, res) => {
-
-    const lid = req.query.lid
-
-    const sid = await seller.findOne({ login: lid });
-    const data = await product.find({ sellerid: sid._id })
-
-    res.json({ 'data': data })
-
-
-
-    // const sid = await seller.findOne({ login: req.session.lid });
-    // const data = await product.find({ sellerid: sid._id });
-    // res.render('sellerhome', { data: data });
-});
-
-router.get('/sellerprofile', async (req, res) => {
-    const lid = req.query.lid;
-
-    const data = await seller.findOne({ login: lid });
-
-    res.json({ 'data': data })
-    // const data = await seller.findOne({login:req.session.lid});
-    // res.render('view',{a:data});
-});
-
-router.get('/delete/:id', async (req, res) => {
-    const id = req.params.id;
-    await product.findOneAndDelete(
-        { _id: id });
-
-    res.render('delsucc');
-})
-
-router.get('/edit', async (req, res) => {
-
-
-    const id = req.query.id;
-
-    console.log(id);
-
-
-    const data = await product.findOne({ _id: id })
-
-
-    res.json({ 'data': data })
-
-
-
-
-    // const id = req.params.id;
-    // const data = await product.findOne({ _id: id })
-    // console.log(data);
-    // res.render('edprod', { a: data });
-});
-
-router.post('/editproduct', upload.single('productImage'), async (req, res) => {
-    const image = req.file.filename;
-    const pname = req.body.productName;
-    const pprice = req.body.price;
-    const description = req.body.description;
-    const id = req.body.id;
-
-    var item =
-    {
-        image: image,
-        productprice: pprice,
-        productname: pname,
-        description: description,
-    };
-
-    await product.findOneAndUpdate(
-        { _id: id },
-        { $set: item },
-        { new: true }
-    )
-
-    res.render('edsucc');
-
-
-});
-
-router.post('/purchase', async (req, res) => {
-    const id = req.body.id;
-    const quantity = req.body.quantity;
-
-    const prod = await product.findOne({ _id: id });
-    const userr = await reg.findOne({ login: req.session.lid });
-
-
-    const total = prod.productprice * quantity
-
-
-    var item =
-    {
-        quantity: quantity,
-        product: prod._id,
-        user: userr._id,
-        amount: total
-    }
-
-    const ord = new order(item)
-    await ord.save();
-
-    res.send('success');
-
-});
-
-router.get('/vieworder', async (req, res) => {
-    const rid = await reg.findOne({ login: req.session.lid })
-    const data = await order.find({ user: rid._id }).populate('user').populate('product');
-    res.render('vieworder', { data: data });
-});
-
-router.get('/deleteorder/:id', async (req, res) => {
-    const id = req.params.id;
-    await order.findOneAndDelete({ _id: id })
-    res.render('delsucc');
-});
-
-router.get('/recievedorders', async (req, res) => {
-    const sid = await seller.findOne({ login: req.session.lid });
-    const hii = await product.find({ sellerid: sid._id })
-
-    const aaa = await order.find({ product: hii._id }).populate('product');
-    console.log(aaa);
-
-    const hello = hii.map(prod => prod._id);
-    const data = await order.find({ product: { $in: hello } }).populate('product')
-
-    res.render('record', { data: data })
-});
-
-router.post('/addcart', async (req, res) => {
-    const id = req.body.id;
-    const quantity = req.body.quantity;
-
-    const prod = await product.findOne({ _id: id });
-    const userr = await reg.findOne({ login: req.session.lid });
-
-    console.log(userr);
-
-    var item =
-    {
-        product: prod._id,
-        user: userr._id,
-        quantity: quantity,
-        amount: prod.productprice * quantity
-    };
-
-    const car = new cart(item);
-    await car.save()
-    res.redirect('/user/home');
-});
-
-router.get('/showcart', async (req, res) => {
-
-    const regg = await reg.findOne({ login: req.session.lid });
-    const caaaa = await cart.find({ user: regg._id }).populate('product');
-
-    const totall = await cart.find({ user: regg._id })
-    var toootal = 0;
-
-    for (i in totall) {
-        // console.log(totall[i].amount);
-        toootal += Number(totall[i].amount);
-        // console.log(toootal);
-
-    };
-
-
-
-    res.render('cartss', { data: caaaa, total: toootal });
-});
-
-router.post('/cartpurchase', async (req, res) => {
-
-    const regg = await reg.findOne({ login: req.session.lid });
-    const caaaa = await cart.find({ user: regg._id }).populate('product');
-
-    console.log(caaaa);
-
-    for (i in caaaa) {
-        var item =
-        {
-            quantity: caaaa[i].quantity,
-            product: caaaa[i].product._id,
-            user: regg._id,
-            amount: caaaa[i].amount
-        }
-
-        const ord = new order(item)
-        await ord.save();
-
-    }
-    await cart.deleteMany({ user: regg._id });
-
-
-    res.render("ordsucc");
-
-})
-
-router.get('/cartdelete/:id', async (req, res) => {
-    const id = req.params.id;
-
-    await cart.findOneAndDelete({ _id: id })
-    res.redirect('/user/showcart')
-})
-
-
 router.post('/logout', (req, res) => {
     try {
         res.clearCookie('token');
@@ -477,4 +204,28 @@ router.post('/logout', (req, res) => {
         return res.status(500).json({ status: 'error', message: error.message });
     }
 });
+
+
+
+//view details
+
+//view complaints
+
+//post complaints
+
+//view replies
+
+//view order
+
+//delete order
+
+//add to cart
+
+//show cart
+
+//purchase from cart
+
+//delete from cart
+
+
 module.exports = router;
