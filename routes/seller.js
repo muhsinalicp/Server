@@ -207,6 +207,50 @@ router.post(
   }
 );
 
+//fetch products according to id
+router.get("/getproduct/:id", async (req, res) => {
+  try {
+    const productid = req.params.id;
+
+    const product = await Product.findById(productid);
+    if (!product) {
+      return res.status(400).json({ message: "Product Not Found" });
+    }
+
+    return res.status(200).json({ product });
+  } catch (error) {
+    console.log("error occured in /seller/editproduct/:id route :", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error. Please try again later.",
+    });
+  }
+});
+
+// edit product
+router.patch(
+  "/editproduct/:id",
+  upload.fields([
+    { name: "mainimage", maxCount: 1 },
+    { name: "additionalImages", maxCount: 4 },
+  ]),
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const sellerid = req.user.id;
+      console.log(req.files);
+
+      const productid = req.params.id;
+    } catch (error) {
+      console.log("error occured in /seller/editproduct/:id route :", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Internal server error. Please try again later.",
+      });
+    }
+  }
+);
+
 // delete product
 router.delete("/deleteproduct/:id", authMiddleware, async (req, res) => {
   try {

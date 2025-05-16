@@ -226,7 +226,6 @@ router.get("/products/:category", async (req, res) => {
 router.post("/reviews", authMiddleware, async (req, res) => {
   const { productId, rating, review } = req.body;
   const { _id } = req.user;
-  console.log("rating:", rating);
 
   if (!rating || !review) {
     return res
@@ -259,7 +258,7 @@ router.post("/reviews", authMiddleware, async (req, res) => {
     // console.log("avgRating:", avgRating);
     let totalReviews = product.numReviews + 1;
     // console.log("totalReviews:", totalReviews);
-    let avgRating = totalRating / totalReviews;
+    let avgRating = (totalRating / totalReviews).toFixed(1);
     // console.log("avgRating:", avgRating);
 
     await Product.findByIdAndUpdate(productId, {
@@ -270,7 +269,7 @@ router.post("/reviews", authMiddleware, async (req, res) => {
 
     const newReview = {
       productId,
-      rating: Number(rating).toFixed(1),
+      rating: Number(rating),
       review,
       userId: _id,
     };
